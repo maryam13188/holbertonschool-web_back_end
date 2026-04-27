@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Deletion-resilient hypermedia pagination module."""
+"""Deletion-resilient hypermedia pagination."""
 
 import csv
-from typing import Dict, List, Optional
+from typing import Dict, List
 
 
 class Server:
@@ -11,62 +11,37 @@ class Server:
     DATA_FILE = "Popular_Baby_Names.csv"
 
     def __init__(self) -> None:
-        """Initialize server with no cached datasets."""
+        """Initialize server storage."""
         self.__dataset = None
         self.__indexed_dataset = None
 
     def dataset(self) -> List[List]:
-        """
-        Load and cache the dataset from CSV file.
-
-        Returns:
-            List[List]: dataset rows (excluding header).
-        """
+        """Return cached dataset."""
         if self.__dataset is None:
             with open(self.DATA_FILE) as f:
                 reader = csv.reader(f)
                 dataset = [row for row in reader]
-            self.__dataset = dataset[1:]  # skip header
+            self.__dataset = dataset[1:]
         return self.__dataset
 
     def indexed_dataset(self) -> Dict[int, List]:
-        """
-        Return dataset indexed by original insertion order (starting at 0).
-
-        Returns:
-            Dict[int, List]: mapping index -> row.
-        """
+        """Return dataset indexed by sorting position, starting at 0."""
         if self.__indexed_dataset is None:
             dataset = self.dataset()
-            self.__indexed_dataset = {i: dataset[i] for i in range(len(dataset))}
+            self.__indexed_dataset = {
+                i: dataset[i] for i in range(len(dataset))
+            }
         return self.__indexed_dataset
 
-    def get_hyper_index(self, index: Optional[int] = None, page_size: int = 10) -> Dict:
-        """
-        Return a deletion‑resilient page starting from a given index.
-
-        Args:
-            index (Optional[int]): starting index (0‑based). Defaults to 0.
-            page_size (int): desired number of items per page.
-
-        Returns:
-            Dict: {
-                "index": int (the provided index),
-                "data": List[List] (collected rows),
-                "page_size": int (actual number of rows returned),
-                "next_index": int (next starting index for next page)
-            }
-
-        Raises:
-            AssertionError: if index is out of range or not an integer.
-        """
+    def get_hyper_index(self, index: int = None, page_size: int = 10) -> Dict:
+        """Return a deletion-resilient page starting from an index."""
         if index is None:
             index = 0
 
         indexed_data = self.indexed_dataset()
         max_index = max(indexed_data.keys())
 
-        assert isinstance(index, int) and 0 <= index <= max_index
+        assert isinstance(index, int) and index >= 0 and index <= max_index
 
         data = []
         next_index = index
