@@ -1,69 +1,44 @@
 #!/usr/bin/env python3
-"""Simple pagination module that provides pagination for a CSV dataset."""
+"""Implement simple pagination over the baby names dataset."""
 
+from typing import List
+from typing import Tuple
 import csv
-from typing import List, Tuple
 
 
 def index_range(page: int, page_size: int) -> Tuple[int, int]:
-    """
-    Calculate start and end indices for a given page and page size.
-
-    Args:
-        page (int): 1-indexed page number
-        page_size (int): number of items per page
-
-    Returns:
-        Tuple[int, int]: a tuple (start_index, end_index)
-    """
-    start = (page - 1) * page_size
-    end = page * page_size
-    return (start, end)
+    """Return the start and end indexes for a given page and page size."""
+    start_index = (page - 1) * page_size
+    end_index = start_index + page_size
+    return (start_index, end_index)
 
 
 class Server:
-    """Server class to paginate a database of popular baby names."""
-
+    """Paginate a dataset of popular baby names."""
     DATA_FILE = "Popular_Baby_Names.csv"
 
-    def __init__(self) -> None:
-        """Initialize the server with no cached dataset."""
+    def __init__(self):
         self.__dataset = None
 
     def dataset(self) -> List[List]:
-        """
-        Load and cache the dataset from CSV file.
-
-        Returns:
-            List[List]: the dataset as a list of rows (excluding header)
-        """
+        """Return the cached dataset, loading it from CSV on first access."""
         if self.__dataset is None:
-            with open(self.DATA_FILE) as file:
-                reader = csv.reader(file)
+            with open(self.DATA_FILE) as f:
+                reader = csv.reader(f)
                 dataset = [row for row in reader]
-            self.__dataset = dataset[1:]  # skip header row
+            self.__dataset = dataset[1:]
+
         return self.__dataset
 
     def get_page(self, page: int = 1, page_size: int = 10) -> List[List]:
-        """
-        Retrieve a specific page of the dataset.
+        """Return one page of data for the given page number and page size."""
+        assert isinstance(page, int) and page > 0
+        assert isinstance(page_size, int) and page_size > 0
 
-        Args:
-            page (int): page number (1-indexed, must be > 0)
-            page_size (int): number of items per page (must be > 0)
+        dataset = self.dataset()
+        start_index, end_index = index_range(page, page_size)
 
-        Returns:
-            List[List]: list of rows for the requested page, or empty list if out of range
-
-        Raises:
-            AssertionError: if page or page_size is not a positive integer
-        """
-        assert isinstance(page, int) and page > 0, "page must be a positive integer"
-        assert isinstance(page_size, int) and page_size > 0, "page_size must be a positive integer"
-
-        start, end = index_range(page, page_size)
-        data = self.dataset()
-
-        if start >= len(data):
+        if start_index >= len(dataset):
             return []
-        return data[start:end]
+
+        return dataset[start_index:end_index]
