@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Deletion‑resilient hypermedia pagination module."""
+"""Deletion-resilient hypermedia pagination module."""
 
 import csv
-from typing import List, Dict, Optional
+from typing import Dict, List, Optional
 
 
 class Server:
@@ -11,16 +11,16 @@ class Server:
     DATA_FILE = "Popular_Baby_Names.csv"
 
     def __init__(self) -> None:
-        """Initialize the server with no cached datasets."""
+        """Initialize server with no cached datasets."""
         self.__dataset = None
         self.__indexed_dataset = None
 
     def dataset(self) -> List[List]:
         """
-        Load and cache the dataset from CSV.
+        Load and cache the dataset from CSV file.
 
         Returns:
-            List[List]: dataset rows excluding header.
+            List[List]: dataset rows (excluding header).
         """
         if self.__dataset is None:
             with open(self.DATA_FILE) as f:
@@ -31,7 +31,7 @@ class Server:
 
     def indexed_dataset(self) -> Dict[int, List]:
         """
-        Return dataset indexed by original insertion order.
+        Return dataset indexed by original insertion order (starting at 0).
 
         Returns:
             Dict[int, List]: mapping index -> row.
@@ -54,27 +54,27 @@ class Server:
                 "index": int (the provided index),
                 "data": List[List] (collected rows),
                 "page_size": int (actual number of rows returned),
-                "next_index": int|None (next index to use for next page)
+                "next_index": int (next starting index for next page)
             }
 
         Raises:
-            AssertionError: if index is out of range.
+            AssertionError: if index is out of range or not an integer.
         """
         if index is None:
             index = 0
 
-        indexed = self.indexed_dataset()
-        max_idx = max(indexed.keys()) if indexed else -1
-        assert isinstance(index, int) and 0 <= index <= max_idx, "Index out of range"
+        indexed_data = self.indexed_dataset()
+        max_index = max(indexed_data.keys())
+
+        assert isinstance(index, int) and 0 <= index <= max_index
 
         data = []
-        current = index
-        while len(data) < page_size and current <= max_idx:
-            if current in indexed:
-                data.append(indexed[current])
-            current += 1
+        next_index = index
 
-        next_index = current if current <= max_idx else None
+        while len(data) < page_size and next_index <= max_index:
+            if next_index in indexed_data:
+                data.append(indexed_data[next_index])
+            next_index += 1
 
         return {
             "index": index,
